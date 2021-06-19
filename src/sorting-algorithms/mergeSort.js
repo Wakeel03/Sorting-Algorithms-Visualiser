@@ -1,5 +1,6 @@
 var _animations = []
 export const mergeSort = (bars) => {
+    _animations = []
     var barsHeights = []
     bars.forEach(bar => {barsHeights.push(bar.props.height)})
 

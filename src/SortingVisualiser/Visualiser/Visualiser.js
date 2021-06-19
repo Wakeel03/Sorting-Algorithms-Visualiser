@@ -18,11 +18,16 @@ var barSwappingColor = 'violet'
 var barPivotColor = 'gold'
 var barSortedColor = 'grey'
 
+var chosenAlgorithm = "Bubble Sort"
+
 
 export default function Visualiser() {
     const [bars, setBars] = useState([])
-    var barsNumber = 50
-    var visualisationTimer = 20
+    const [barsNumber, setBarsNumber] = useState(50)
+    const [visualisationTimer, setVisualisationTimer] = useState(20)
+    const [generateBars, setGenerateBars] = useState(true)
+
+    const [isAnimationOn, setIsAnimationOn] = useState(false)
 
     const [animations, setAnimations] = useState([])
 
@@ -34,24 +39,62 @@ export default function Visualiser() {
     }, [])
 
     useEffect(() => {
+        console.log(animations)
         animations.length > 0 && startAnimation()
     }, [animations])
 
+    useEffect(() => {
+        for (var i = 0; i < barsNumber; i++)
+            bars[i] = <Bar height={getRandomHeightForBars()}></Bar>
+        setBars((bars) => [...bars])
+
+    }, [generateBars])
+
+    const generateNewBars = () => {
+        setBars([])
+        setGenerateBars(!generateBars)
+    }
+
     const sort = () => {
-        // const {_animations, barsHeights} = bubbleSort(bars)
-        // const {_animations, barsHeights} = selectionSort(bars)
-        // const {_animations, barsHeights} = insertionSort(bars)
-        const {_animations, barsHeights} = quickSort(bars)
+        // console.log("Sort")
+        var algorithm = bubbleSort
+
+        switch(chosenAlgorithm){
+            case "Bubble Sort":
+                algorithm = bubbleSort
+                break
+            case "Selection Sort":
+                algorithm = selectionSort
+                break
+            case "Insertion Sort":
+                algorithm = insertionSort
+                break
+            case "Merge Sort":
+                algorithm = mergeSort
+                break
+            case "Quick Sort":
+                algorithm = quickSort
+                break
+            default:
+                algorithm = bubbleSort
+                break
+        }
+        
+        const {_animations, barsHeights} = algorithm(bars)
         
         var unsortedBarsHeights = []
         bars.forEach(bar => {unsortedBarsHeights.push(bar.props.height)})
 
-        console.log(verifyIfArrayIsSorted(unsortedBarsHeights, barsHeights))
-
+        // console.log(verifyIfArrayIsSorted(unsortedBarsHeights, barsHeights))
+        console.log(_animations)
+        // console.log(algorithm)
         setAnimations(_animations)
+        // console.log(animations)
     }
 
     const startAnimation = () => {
+        setIsAnimationOn(true)
+        animationCount = 0
         const animationsLength = animations.length
         animationsInterval = setInterval(() => {
             animate(animations, animationsLength, animationCount++)
@@ -65,6 +108,7 @@ export default function Visualiser() {
             const barElements = document.querySelectorAll('.bar')
 
             for (let i = 0; i < barElements.length; i++) barElements[i].style['background-color'] = barSortedColor
+            setIsAnimationOn(false)
             return
         }
 
@@ -158,16 +202,43 @@ export default function Visualiser() {
     }
 
     const clearAnimationInterval = () => {
+        setIsAnimationOn(false)
         clearInterval(animationsInterval)
     }
 
     return (
         <>
-            <button onClick={swapBars}>Swap</button>
+            <nav>
+                <ul>
+                    <li onClick={() => chosenAlgorithm = "Bubble Sort"}>Bubble Sort</li>
+                    <li onClick={() => chosenAlgorithm = "Insertion Sort"}>Insertion Sort</li>
+                    <li onClick={() => chosenAlgorithm = "Selection Sort"}>Selection Sort</li>
+                    <li onClick={() => chosenAlgorithm = "Merge Sort"}>Merge Sort</li>
+                    <li onClick={() => chosenAlgorithm = "Quick Sort"}>Quick Sort</li>
+                </ul>
+                <div>
+                    <button onClick={generateNewBars}>Generate Bars</button>
+                    <div class="sliders">
+                        <label>Array Size</label>
+                        <div class="slidecontainer">
+                            <input type="range" min="5" max="50" value={barsNumber} class="slider" id="myRange" onChange={(e) => setBarsNumber(e.target.value)} />
+                        </div>
+                    </div>
+                    <div class="sliders">
+                        <label>Sorting Speed</label>
+                        <div class="slidecontainer">
+                            <input type="range" min="20" max="1000" value={visualisationTimer} class="slider" id="myRange" onChange={(e) => setVisualisationTimer(e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+                {isAnimationOn ? <button onClick={clearAnimationInterval}>Stop</button> : <button onClick={sort}>Play</button>}
+            </nav>
+            
+            {/* <button onClick={swapBars}>Swap</button>
             <button onClick={sort}>Sort</button>
             <button onClick={clearAnimationInterval}>Stop</button>
-            <button onClick={resumeAnimation}>Continue</button>
-            <div className="visualiser">{bars}</div>
+            <button onClick={resumeAnimation}>Continue</button> */}
+            <div class="visualiser">{bars}</div>
         </>
     )
 }
@@ -176,7 +247,7 @@ function getRandomHeightForBars(){
     /**
      * Returns a random number between min (inclusive) and max (exclusive)
     */
-    var min = 200;
-    var max = 800;
+    var min = 60;
+    var max = 650;
     return Math.random() * (max - min) + min;
 }
