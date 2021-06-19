@@ -2,13 +2,22 @@ import './Visualiser.css'
 import { bubbleSort } from '../../sorting-algorithms/bubbleSort.js'
 import { selectionSort } from '../../sorting-algorithms/selectionSort.js'
 import { insertionSort } from '../../sorting-algorithms/insertionSort'
-import { divideConquer } from '../../sorting-algorithms/divideConquer'
+import { mergeSort } from '../../sorting-algorithms/mergeSort'
+import { quickSort } from '../../sorting-algorithms/quickSort'
 
 import React, { useState, useEffect } from 'react'
 import Bar from './Bar/Bar'
 
 var animationsInterval = null
 var animationCount = 0
+
+var barMainColor = 'blue'
+var barColorSelected1 = 'red'
+var barColorSelected2 = 'green'
+var barSwappingColor = 'violet'
+var barPivotColor = 'gold'
+var barSortedColor = 'grey'
+
 
 export default function Visualiser() {
     const [bars, setBars] = useState([])
@@ -32,14 +41,14 @@ export default function Visualiser() {
         // const {_animations, barsHeights} = bubbleSort(bars)
         // const {_animations, barsHeights} = selectionSort(bars)
         // const {_animations, barsHeights} = insertionSort(bars)
-        const barsHeights = divideConquer(bars)
+        const {_animations, barsHeights} = quickSort(bars)
         
         var unsortedBarsHeights = []
         bars.forEach(bar => {unsortedBarsHeights.push(bar.props.height)})
 
         console.log(verifyIfArrayIsSorted(unsortedBarsHeights, barsHeights))
 
-        // setAnimations(_animations)
+        setAnimations(_animations)
     }
 
     const startAnimation = () => {
@@ -55,47 +64,72 @@ export default function Visualiser() {
             clearInterval(animationsInterval)
             const barElements = document.querySelectorAll('.bar')
 
-            for (let i = 0; i < barElements.length; i++) barElements[i].style['background-color'] = 'grey'
+            for (let i = 0; i < barElements.length; i++) barElements[i].style['background-color'] = barSortedColor
             return
         }
-        
-        const {currentElement, comparingElement, shouldSwap, lastElement, isLast} = animations[count]
 
         const barElements = document.querySelectorAll('.bar')
-
-        //bubble sort
-        // if (currentElement > 0) barElements[currentElement - 1].style['background-color'] = 'blue'
-
-        barElements[comparingElement].style['background-color'] = 'green'
-        barElements[currentElement].style['background-color'] = 'red'
         
-        
-        shouldSwap && 
-        setTimeout(() => {
-            barElements[currentElement].style['background-color'] = 'violet'
-            barElements[comparingElement].style['background-color'] = 'violet'
+        //'arrayChange' is used for those animations related to algorithms which use divide and conquer because they often involve incrementally changing some parts of the array (e.g after merging)
+        if ("arrayChange" in animations[count]){
+            // console.log("Found")
+            const {currentIndex, height} = animations[count]
 
-            swapBars(currentElement, comparingElement)
+            if (currentIndex > 0) 
+                barElements[currentIndex - 1].style['background-color'] = barMainColor
+
+            barElements[currentIndex].style['background-color'] = barColorSelected1
+
+            barElements[currentIndex].style.height = `${height}px`
+
+
+        }
+
+        else{
+            const {currentElement, comparingElement, shouldSwap, lastElement, isLast, pivotElement} = animations[count]
+            //bubble sort
+            // if (currentElement > 0) barElements[currentElement - 1].style['background-color'] = 'blue'
+
+            if (currentElement < barElements.length && comparingElement < barElements.length){
+                barElements[comparingElement].style['background-color'] = barColorSelected2 
+                barElements[currentElement].style['background-color'] = barColorSelected1 
+            }
+
+            if (pivotElement)
+                barElements[pivotElement].style['background-color'] = barPivotColor
             
+            shouldSwap && 
+            setTimeout(() => {
+
+                barElements[currentElement].style['background-color'] = barSwappingColor
+                barElements[comparingElement].style['background-color'] = barSwappingColor
+                
+
+                swapBars(currentElement, comparingElement)
+                
+                if (isLast) {
+                    // barElements[currentElement].style['background-color'] = 'blue'
+                    barElements[comparingElement].style['background-color'] = barSortedColor
+                }
+            }, .3 * visualisationTimer)
+
+            setTimeout(() => {
+                let z = lastElement || barElements.length
+                for (let k = 0; k < z; k++){
+                    if (k !== currentElement && k !== comparingElement && k !== pivotElement)
+                        barElements[k].style['background-color'] = barMainColor
+                    
+                }            
+            }, .3 * visualisationTimer)
+
+                            
             if (isLast) {
                 // barElements[currentElement].style['background-color'] = 'blue'
-                barElements[comparingElement].style['background-color'] = 'grey'
+                barElements[comparingElement].style['background-color'] = barSortedColor
             }
-        }, .3 * visualisationTimer)
-
-        setTimeout(() => {
-            for (let k = 0; k < lastElement; k++){
-                if (k !== currentElement && k !== comparingElement)
-                    barElements[k].style['background-color'] = 'blue'
-                
-            }            
-        }, .3 * visualisationTimer)
-
-                        
-        if (isLast) {
-            // barElements[currentElement].style['background-color'] = 'blue'
-            barElements[comparingElement].style['background-color'] = 'grey'
         }
+        
+
     }
 
     const verifyIfArrayIsSorted = (unsortedArray, sortedArray) => {
